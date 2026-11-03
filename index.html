@@ -1,0 +1,858 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#090f20">
+<title>خارطة مهدي المالية</title>
+
+<!-- خط IBM Plex Sans Arabic من Google Fonts -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+<style>
+/* ===================== المتغيّرات والألوان ===================== */
+:root{
+  color-scheme:dark;
+  --bg:#090f20;--panel:#141f35;--line:#2d405e;
+  --text:#f0f5ff;--muted:#9fb0ca;
+  --green:#51e5b2;--blue:#88b6ff;--gold:#ffcf75;--purple:#c4a1ff;--red:#ff8797;
+  --font:'IBM Plex Sans Arabic',system-ui,sans-serif;
+}
+*{box-sizing:border-box}
+body{
+  margin:0;min-height:100vh;padding-top:46px;
+  background:
+    radial-gradient(ellipse at 90% 0%,#18294b 0%,transparent 38%),
+    radial-gradient(ellipse at 0% 35%,#17213d 0%,transparent 42%),
+    var(--bg);
+  color:var(--text);font:15px/1.6 var(--font);
+}
+button,input,select{font:inherit}
+button{cursor:pointer}
+button:active{transform:scale(.97)}
+.num{direction:ltr;unicode-bidi:isolate;display:inline-block}
+
+/* ===================== الهيكل ===================== */
+.shell{max-width:1000px;margin:auto;padding:22px 16px 120px}
+.top{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:26px}
+.brand{font-size:15px;font-weight:700;color:var(--green)}
+.sub{color:var(--muted);font-size:13px}
+.pagetitle{font-size:clamp(26px,6vw,36px);font-weight:700;margin:0 0 16px}
+
+/* ===================== البطاقة الرئيسية ===================== */
+.hero{padding:26px 22px;background:linear-gradient(235deg,#1c3152,#16213b 65%,#1b2d42);border:1px solid #3b5477;border-radius:26px;position:relative;overflow:hidden;box-shadow:0 15px 50px #0004}
+.hero:after{content:'✦';position:absolute;left:18px;top:12px;color:#5ae8c433;font-size:100px;animation:float 7s ease-in-out infinite}
+.hero h1{font-size:clamp(28px,7vw,44px);line-height:1.3;font-weight:700;margin:8px 0 12px;position:relative;z-index:1}
+.hero p{color:#b5c7df;margin:0;position:relative;z-index:1}
+.eyebrow{font-size:12px;font-weight:700;color:var(--green)}
+
+/* ===================== البطاقات والإحصاءات ===================== */
+.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.stats{margin-top:16px}
+.card{background:linear-gradient(210deg,#18243b,#111c30);border:1px solid var(--line);border-radius:21px;padding:18px;min-width:0;box-shadow:0 9px 25px #0002}
+.statval{font-size:clamp(23px,5vw,32px);font-weight:700;margin:6px 0}
+.muted{color:var(--muted)}.tiny{font-size:12px}
+.section{display:flex;justify-content:space-between;align-items:center;margin:28px 0 14px;gap:12px}
+.section h2{margin:0;font-size:21px;font-weight:700}
+
+/* ===================== السنوات والأشهر ===================== */
+.years{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.year,.monthtile{width:100%;text-align:right;background:linear-gradient(220deg,#1d3050,#14223a);border:1px solid #344c6e;border-radius:20px;padding:22px 16px;color:var(--text);transition:transform .2s,box-shadow .2s,border-color .2s}
+.year:hover,.monthtile:hover{transform:translateY(-4px);border-color:var(--green);box-shadow:0 14px 28px #0005}
+.year strong{font-size:clamp(24px,5vw,38px);display:block}
+.year span,.monthtile span{display:block;color:var(--muted);font-size:12px;margin-top:8px}
+.months{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.monthtile strong{font-size:19px}
+.monthtile .amt{color:var(--green);font-weight:700;margin-top:12px}
+
+/* ===================== الأزرار ===================== */
+.back,.btn,.ghost,.danger{border:1px solid #405574;border-radius:13px;padding:10px 14px;background:#243654;color:var(--text);font-weight:600}
+.btn{background:linear-gradient(240deg,#34d5a1,#65ebc1);color:#09251e;border:0}
+.ghost{background:#1c2b45}
+.danger{color:#ffc0c9;border-color:#814352;background:#442632}
+.btnrow{display:flex;gap:9px;flex-wrap:wrap}
+.bigbtn{min-height:47px}
+button:disabled{opacity:.45;cursor:not-allowed}
+
+/* ===================== شريط التقدّم ===================== */
+.bar{height:9px;border-radius:20px;background:#2b3d57;overflow:hidden;margin-top:12px}
+.fill{height:100%;background:linear-gradient(270deg,#2ed3a4,#91ffcf);border-radius:20px;transition:width .65s cubic-bezier(.2,.8,.2,1)}
+
+/* ===================== عناصر القائمة ===================== */
+.item{display:flex;align-items:center;gap:12px;padding:15px 0;border-bottom:1px solid #2a3b54}
+.item:last-child{border-bottom:0}
+.check{appearance:none;-webkit-appearance:none;flex:none;width:26px;height:26px;border:2px solid #63748e;border-radius:8px;background:#0d192a;display:grid;place-items:center;margin:0;cursor:pointer}
+.check:checked{background:#37d9a6;border-color:#37d9a6;animation:pop .3s}
+.check:checked:after{content:'✓';font-size:18px;font-weight:900;line-height:1;color:#08241b}
+.itemmain{flex:1;min-width:0}
+.itemname{display:block;font-weight:600;overflow-wrap:anywhere}
+.itemmeta{display:block;color:var(--muted);font-size:12px;margin-top:2px}
+.money{font-weight:700;white-space:nowrap;direction:ltr}
+.done .itemname{text-decoration:line-through;color:#a0b3c2}
+.pill{display:inline-flex;padding:4px 10px;border-radius:20px;background:#254437;color:#82f0c2;font-size:12px;font-weight:700}
+.green{color:var(--green)}.blue{color:var(--blue)}.purple{color:var(--purple)}.gold{color:var(--gold)}
+
+/* ===================== النماذج ===================== */
+.field{display:flex;flex-direction:column;gap:7px;margin:12px 0}
+.field label{color:#c1cee1;font-size:13px;font-weight:600}
+.field input,.field select{width:100%;min-height:44px;border:1px solid #425676;border-radius:12px;background:#0c1729;color:#fff;padding:10px 12px;outline:none}
+.field input[type=number]{direction:ltr;text-align:right}
+.field input:focus,.field select:focus{border-color:var(--green)}
+.editrow{display:grid;grid-template-columns:1fr 110px auto;gap:8px;align-items:end;padding:8px 0;border-bottom:1px solid #293a52}
+.twocol{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+
+/* ===================== رسائل وتنبيهات ===================== */
+.notice{background:#2a3042;border:1px solid #6c5e3f;padding:12px;border-radius:12px;color:#ffdda0;margin:12px 0}
+.banner{border:1px solid #436a67;background:linear-gradient(260deg,#193a40,#1b2942);padding:16px;border-radius:17px}
+.note{font-size:13px;color:var(--muted);line-height:1.8}
+.line{display:flex;justify-content:space-between;gap:12px;margin:12px 0}
+.progresslabel{display:flex;justify-content:space-between;gap:12px}
+.divider{height:1px;background:#30415a;margin:16px 0}
+.history{max-height:250px;overflow:auto}
+.historyentry{padding:10px 0;border-bottom:1px solid #293a52;font-size:13px}
+
+/* ===================== الرسم البياني ===================== */
+.chart{width:100%;height:220px;display:block;overflow:visible;direction:ltr}
+.legend{display:flex;gap:16px;flex-wrap:wrap;margin-top:8px}
+.legend span{font-size:12px;color:var(--muted);display:inline-flex;align-items:center;gap:6px}
+.dot{width:10px;height:10px;border-radius:50%;display:inline-block}
+
+/* ===================== شريط التنقّل السفلي ===================== */
+.nav{position:fixed;z-index:20;bottom:0;left:0;right:0;display:flex;justify-content:space-around;gap:3px;background:#0c1627ef;backdrop-filter:blur(20px);border-top:1px solid #34465e;padding:8px 8px calc(8px + env(safe-area-inset-bottom))}
+.nav button{background:none;border:0;color:#9db0c9;min-height:52px;min-width:66px;font-size:12px;font-weight:600}
+.nav button.active{color:var(--green)}
+.nav i{display:block;font-size:21px;font-style:normal;margin-bottom:2px}
+
+/* ===================== شريط الحفظ العلوي ===================== */
+#saveDock{position:fixed;z-index:1000;top:env(safe-area-inset-top,0px);left:50%;transform:translateX(-50%);width:min(94vw,540px);display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px 12px;border:1px solid #355d70;border-top:0;border-radius:0 0 16px 16px;background:#101d30ee;backdrop-filter:blur(18px);box-shadow:0 10px 30px #0007;color:#b6d6e9;font-size:12px;font-weight:500}
+#saveDock button{background:#45d6a2;color:#09251d;border:0;border-radius:10px;padding:8px 12px;font-weight:700;white-space:nowrap}
+#saveStatus.warning{color:var(--gold)}
+
+/* ===================== إشعار منبثق ===================== */
+.toast{position:fixed;bottom:95px;left:50%;transform:translateX(-50%);background:#2d4d44;color:#fff;border-radius:14px;padding:13px 18px;z-index:99;box-shadow:0 10px 30px #0008;max-width:90vw;display:none}
+.toast.show{display:block;animation:rise .2s}
+
+/* ===================== الحركات ===================== */
+.appear{animation:rise .38s both}
+.spark{animation:glow 5s ease-in-out infinite}
+@keyframes rise{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+@keyframes pop{50%{transform:scale(1.17)}}
+@keyframes float{50%{transform:translateY(12px) rotate(-8deg)}}
+@keyframes glow{50%{box-shadow:0 0 40px #36dba522}}
+
+/* ===================== التجاوب ===================== */
+@media(min-width:760px){
+  .months{grid-template-columns:repeat(3,1fr)}
+  .stats{grid-template-columns:repeat(4,1fr)}
+  .shell{padding-top:36px}
+  .year{padding:28px}
+  #saveDock{font-size:13px}
+}
+@media(max-width:480px){
+  .hero{padding:22px 18px}
+  .twocol{grid-template-columns:1fr}
+}
+@media(max-width:360px){
+  .editrow{grid-template-columns:1fr 80px auto}
+  .card{padding:14px}
+}
+@media(prefers-reduced-motion:reduce){*,*:before,*:after{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+
+<main id="app" class="shell"></main>
+<nav class="nav" id="nav"></nav>
+<div class="toast" id="toast"></div>
+<input type="file" id="importFile" accept=".json,application/json" hidden>
+
+<div id="saveDock" role="status" aria-live="polite">
+  <span id="saveStatus">جارٍ فحص التخزين…</span>
+  <button type="button" onclick="exportBackup()">↓ نسخة احتياطية</button>
+</div>
+
+<script>
+'use strict';
+
+/* =========================================================
+   1) الثوابت والأدوات المساعدة
+   ========================================================= */
+const KEY = 'mahdi-roadmap-ar-v1';
+const CAR_TARGET = 11000;
+
+// أسماء الأشهر كما تُستعمل في لبنان
+const NAMES = ['كانون الثاني','شباط','آذار','نيسان','أيار','حزيران','تموز','آب','أيلول','تشرين الأول','تشرين الثاني','كانون الأول'];
+
+// قائمة الأشهر: من تشرين الثاني 2026 حتى تشرين الأول 2028 (24 شهر)
+const months = [];
+for (let y = 2026; y <= 2028; y++)
+  for (let m = 0; m < 12; m++)
+    if ((y !== 2026 || m >= 10) && (y !== 2028 || m <= 9))
+      months.push(`${y}-${String(m + 1).padStart(2, '0')}`);
+
+const usd = n => `<span class="num">$${Math.round(n).toLocaleString('en-US')}</span>`;
+const usdText = n => '$' + Math.round(n).toLocaleString('en-US');
+const escapeHtml = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const monthName  = k => NAMES[+k.slice(5) - 1];
+const monthLabel = k => `${monthName(k)} ${k.slice(0, 4)}`;
+const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+
+const CATEGORY = { goal:'هدف', emergency:'طوارئ', essential:'أساسي', car:'سيارة' };
+
+function entry(name, amount, category = 'goal', id) {
+  return { id: id || uid(), name, amount, category, done: false };
+}
+
+/* =========================================================
+   2) البيانات الافتراضية
+   ========================================================= */
+function defaults() {
+  const data = { version: 4, salaryBase: 1400, family: 0, yearly: {}, extra: [], months: {}, history: [] };
+  for (const k of months)
+    data.months[k] = { salary: k === '2026-11' ? 1200 : null, personal: 300, university: 200, familyPayment: 0, items: [] };
+
+  const add = (k, name, amount, category = 'goal') => data.months[k].items.push(entry(name, amount, category));
+  add('2026-11', 'تسجيل الموتوسيكل', 300);
+  add('2026-11', 'ساعة', 300);
+  add('2026-11', 'صندوق الطوارئ', 100, 'emergency');
+  add('2026-12', 'مكتب وكرسي', 300);
+  add('2026-12', 'برادي', 100);
+  add('2026-12', 'صندوق الطوارئ', 100, 'emergency');
+  add('2027-01', 'رخصتَي سوق', 500);
+  add('2027-01', 'صندوق الطوارئ', 100, 'emergency');
+  add('2027-02', 'آيفون', 500);
+  add('2027-03', 'كمبيوتر — الدفعة الأولى', 900);
+  add('2027-04', 'كمبيوتر — الدفعة الثانية', 900);
+  add('2027-05', 'كمبيوتر — الدفعة الأخيرة', 200);
+  return data;
+}
+
+/* =========================================================
+   3) التخزين (localStorage)
+   ========================================================= */
+function storageWorks() {
+  try {
+    const k = 'mahdi-storage-test';
+    localStorage.setItem(k, '1');
+    const ok = localStorage.getItem(k) === '1';
+    localStorage.removeItem(k);
+    return ok;
+  } catch (e) { return false; }
+}
+
+// ✅ الإصلاح: هذه الدالة صارت معرّفة قبل أي استدعاء لها
+function updateSaveStatus(message, ok) {
+  const el = document.getElementById('saveStatus');
+  if (!el) return;
+  el.textContent = message;
+  el.classList.toggle('warning', !ok);
+}
+
+function normalize(s) {
+  for (const k of months) if (s.months[k] && s.months[k].familyPayment == null) s.months[k].familyPayment = 0;
+  return s;
+}
+
+let state;
+try { state = JSON.parse(localStorage.getItem(KEY)) || defaults(); } catch (e) { state = defaults(); }
+if (!state || !state.months || !state.months['2026-11']) state = defaults();
+normalize(state);
+
+let page = 'home', selectedYear = 2027, selectedMonth = '2026-11', edit = false, undoStack = [];
+
+function snapshot(label) {
+  undoStack.push(JSON.stringify(state));
+  if (undoStack.length > 30) undoStack.shift();
+  state.history = state.history || [];
+  state.history.unshift({ when: new Date().toLocaleString('ar-LB-u-nu-latn'), label });
+  state.history = state.history.slice(0, 40);
+}
+
+function save() {
+  try {
+    localStorage.setItem(KEY, JSON.stringify(state));
+    const ok = localStorage.getItem(KEY) === JSON.stringify(state);
+    updateSaveStatus(ok ? 'محفوظ على هذا المتصفح · يُنصح بنسخة احتياطية' : 'التخزين غير موثوق · صدّر نسخة احتياطية', ok);
+    if (!ok) toast('التخزين غير موثوق — صدّر نسخة احتياطية');
+  } catch (e) {
+    updateSaveStatus('التخزين محظور · صدّر نسخة احتياطية', false);
+    toast('تخزين المتصفح غير متاح — صدّر نسخة احتياطية');
+  }
+}
+
+function toast(s) {
+  const el = document.getElementById('toast');
+  el.textContent = s;
+  el.classList.add('show');
+  clearTimeout(window.toastTimer);
+  window.toastTimer = setTimeout(() => el.classList.remove('show'), 3300);
+}
+
+/* =========================================================
+   4) الحسابات
+   ========================================================= */
+function baseSalary(k) {
+  const m = state.months[k];
+  return m.salary == null ? (state.yearly[k.slice(0, 4)] ?? state.salaryBase) : m.salary;
+}
+function extrasFor(k) {
+  return state.extra.filter(e => e.month === k || (e.recurring && e.year === k.slice(0, 4)));
+}
+function monthIncome(k) {
+  return baseSalary(k) + (state.family || 0) + extrasFor(k).reduce((s, e) => s + e.amount, 0);
+}
+
+function plan() {
+  let total = 0, actual = 0;
+  const result = {};
+  for (const k of months) {
+    const m = state.months[k];
+    const income = monthIncome(k);
+    const fixed = m.personal + m.university + (m.familyPayment || 0);
+    const goals = m.items.reduce((s, i) => s + i.amount, 0);
+    const available = income - fixed - goals;
+    const car = Math.max(0, available);
+    const carDone = !!m.carDone;
+    total += car;
+    if (carDone) actual += car;
+    const done = m.items.filter(i => i.done).reduce((s, i) => s + i.amount, 0)
+      + (m.personalDone ? m.personal : 0)
+      + (m.universityDone ? m.university : 0)
+      + (m.familyPaymentDone ? (m.familyPayment || 0) : 0)
+      + (carDone ? car : 0);
+    result[k] = { income, fixed, goals, car, available, total, actual, carDone, done, allocated: fixed + goals + car };
+  }
+  return result;
+}
+const targetMonth = () => { const p = plan(); return months.find(k => p[k].total >= CAR_TARGET) || null; };
+const actualCar   = () => plan()[months.at(-1)].actual;
+
+function checkedCount(m) {
+  return m.items.filter(i => i.done).length + (m.personalDone ? 1 : 0) + (m.universityDone ? 1 : 0) + (m.familyPaymentDone ? 1 : 0) + (m.carDone ? 1 : 0);
+}
+
+/* =========================================================
+   5) التنقّل
+   ========================================================= */
+function nav() {
+  const tabs = [['home','⌂','الرئيسية'],['goals','◎','الأهداف'],['analytics','▥','التحليلات'],['settings','⚙','الإعدادات']];
+  document.getElementById('nav').innerHTML = tabs.map(([id, icon, label]) =>
+    `<button class="${page === id ? 'active' : ''}" onclick="go('${id}')"><i>${icon}</i>${label}</button>`).join('');
+}
+
+function go(dest, arg) {
+  page = dest;
+  if (dest === 'year') selectedYear = +arg;
+  if (dest === 'month') { selectedMonth = arg; edit = false; }
+  render();
+}
+
+function header(title, subtitle) {
+  return `<div class="top">
+      <div><div class="brand">خارطة مهدي المالية</div><div class="sub">${subtitle || '2026 — 2028 · خطة مالية: السيارة أولاً'}</div></div>
+      <button class="ghost" onclick="go('home')" aria-label="الرئيسية">⌂</button>
+    </div>
+    <h1 class="pagetitle">${title}</h1>`;
+}
+
+function stat(label, val, sub, color = '') {
+  return `<div class="card"><div class="muted tiny">${label}</div><div class="statval ${color}">${val}</div><div class="tiny muted">${sub}</div></div>`;
+}
+
+/* =========================================================
+   6) الصفحة الرئيسية
+   ========================================================= */
+function home() {
+  const p = plan(), last = p[months.at(-1)], tm = targetMonth();
+  const remaining = Math.max(0, CAR_TARGET - last.actual);
+  return `
+  <div class="top">
+    <div><div class="brand">خارطة مهدي المالية</div><div class="sub">مالك. أهدافك. مستقبلك.</div></div>
+    <button class="ghost" onclick="go('settings')" aria-label="الإعدادات">⚙</button>
+  </div>
+
+  <div class="hero spark">
+    <div class="eyebrow">تمويل شخصي · 24 شهر</div>
+    <h1>ابنِ مستقبلك.<br>شهراً بعد شهر.</h1>
+    <p>اختر السنة، ثم الشهر، وتابع كل هدف.</p>
+  </div>
+
+  <div class="grid stats">
+    ${stat('هدف ادخار السيارة', usd(CAR_TARGET), 'حصّتك من سيارة بـ $15,000', 'green')}
+    ${stat('الادخار المخطط للسيارة', usd(last.total), 'حتى تشرين الأول 2028', 'blue')}
+    ${stat('المدّخر فعلياً', usd(last.actual), 'إيداعات السيارة المؤكَّدة فقط', 'green')}
+    ${stat('شهر الوصول للهدف', tm ? monthLabel(tm) : 'لم يتحقق', 'حسب الخطة الحالية', 'purple')}
+  </div>
+
+  <div class="section"><h2>اختر السنة</h2><span class="muted tiny">الخطوة 1 من 3</span></div>
+  <div class="years">
+    ${[2026, 2027, 2028].map(y => `
+      <button class="year" onclick="go('year',${y})">
+        <strong>${y}</strong>
+        <span>${months.filter(k => k.startsWith(y)).length} أشهر ←</span>
+      </button>`).join('')}
+  </div>
+
+  <div class="section"><h2>العدّ التنازلي للسيارة</h2><span class="pill">السيارة أولاً</span></div>
+  <div class="card">
+    <div class="progresslabel"><b>المدّخر فعلياً</b><b class="green">${usd(last.actual)} / ${usd(CAR_TARGET)}</b></div>
+    <div class="bar"><div class="fill" style="width:${Math.min(100, last.actual / CAR_TARGET * 100)}%"></div></div>
+    <div class="line"><span class="muted">المتبقي للادخار</span><b>${usd(remaining)}</b></div>
+    <div class="note">المساهمات المخططة هي توقّعات فقط. يزيد الادخار الفعلي فقط عندما تؤكّد إيداع السيارة في الشهر. مبلغ بيع سيارة الوالد ($4,000) منفصل ولا يُحتسب ضمن المدّخرات.</div>
+  </div>
+
+  <div class="section"><h2>ترتيب الأولويات</h2></div>
+  <div class="card">
+    <div class="line"><span>1 · الأهداف الصغيرة + الآيفون</span><b class="green">قبل شباط 2027</b></div>
+    <div class="line"><span>2 · الكمبيوتر (${usd(2000)})</span><b class="purple">قبل أيار 2027</b></div>
+    <div class="line"><span>3 · السيارة (${usd(CAR_TARGET)})</span><b class="green">${tm ? monthLabel(tm) : 'خارج الخطة'}</b></div>
+    <div class="note">صندوق الطوارئ محدود بـ $300. لا ميزانية مرنة ولا ادخار للشقة خلال فترة هدف السيارة.</div>
+  </div>`;
+}
+
+/* =========================================================
+   7) صفحة السنة
+   ========================================================= */
+function yearView() {
+  const p = plan(), ks = months.filter(k => k.startsWith(selectedYear));
+  return `${header(String(selectedYear), 'الخطوة 2 من 3 · اختر الشهر')}
+  <button class="back" onclick="go('home')">→ كل السنوات</button>
+  <div class="section"><h2>الأشهر</h2><span class="muted tiny">${ks.length} أشهر</span></div>
+  <div class="months">
+    ${ks.map(k => {
+      const m = state.months[k], d = p[k], checked = checkedCount(m), all = m.items.length + 4;
+      return `<button class="monthtile" onclick="go('month','${k}')">
+        <strong>${monthName(k)}</strong>
+        <span>${checked}/${all} منجَز · الدخل ${usd(d.income)}</span>
+        <div class="amt">السيارة ${usd(d.car)} ←</div>
+        <div class="bar"><div class="fill" style="width:${checked / all * 100}%"></div></div>
+      </button>`;
+    }).join('')}
+  </div>`;
+}
+
+/* =========================================================
+   8) صفحة الشهر
+   ========================================================= */
+function checkRow(k, id, name, amount, done, category, meta) {
+  return `<label class="item ${done ? 'done' : ''}">
+    <input class="check" type="checkbox" ${done ? 'checked' : ''} onchange="toggle('${k}','${id}',this.checked)">
+    <span class="itemmain"><span class="itemname">${escapeHtml(name)}</span><span class="itemmeta">${escapeHtml(meta || CATEGORY[category] || category)}</span></span>
+    <span class="money ${category === 'car' ? 'green' : ''}">${usdText(amount)}</span>
+  </label>`;
+}
+
+function monthView() {
+  const k = selectedMonth, m = state.months[k], d = plan()[k], i = months.indexOf(k);
+  const cnt = checkedCount(m), all = m.items.length + 4;
+  return `${header(monthLabel(k), 'الخطوة 3 من 3 · خطّتك المالية لهذا الشهر')}
+  <div class="btnrow">
+    <button class="back" onclick="go('year',${k.slice(0, 4)})">→ ${k.slice(0, 4)}</button>
+    ${i > 0 ? `<button class="ghost" onclick="go('month','${months[i - 1]}')">→ السابق</button>` : ''}
+    ${i < months.length - 1 ? `<button class="ghost" onclick="go('month','${months[i + 1]}')">التالي ←</button>` : ''}
+  </div>
+
+  <div class="grid stats" style="margin-top:16px">
+    ${stat('الدخل الشهري', usd(d.income), 'الراتب + الدخل الإضافي', 'blue')}
+    ${stat('الأهداف المخططة', usd(d.goals), 'الأهداف المسمّاة فقط', 'purple')}
+    ${stat('ادخار السيارة التلقائي', usd(d.car), 'الدخل ناقص الأساسيات والأهداف', 'green')}
+    ${stat('المتبقي بعد الخطة', usd(d.available - d.car), 'مبلغ غير مخصّص')}
+  </div>
+  ${d.available < 0 ? `<div class="notice">⚠ هذا الشهر تجاوز الميزانية بـ ${usd(-d.available)}. عدّل الأهداف أو الدخل.</div>` : ''}
+
+  <div class="section"><h2>دفعات الشهر</h2><button class="btn" onclick="editMonth()">✎ تعديل الشهر</button></div>
+  <div class="card">
+    <div class="progresslabel"><b>المنجَز ${cnt}/${all}</b><b class="green">${Math.round(cnt / all * 100)}%</b></div>
+    <div class="bar"><div class="fill" style="width:${cnt / all * 100}%"></div></div>
+    <div class="divider"></div>
+
+    <div class="eyebrow blue">المصاريف الأساسية</div>
+    ${checkRow(k, 'personal', 'مصاريف شخصية', m.personal, !!m.personalDone, 'essential', 'مصروف شهري')}
+    ${checkRow(k, 'university', 'الجامعة', m.university, !!m.universityDone, 'essential', 'مصروف شهري')}
+    ${checkRow(k, 'familyPayment', 'مساعدة العائلة', m.familyPayment || 0, !!m.familyPaymentDone, 'essential', 'دفعة اختيارية للعائلة · افتراضياً $0')}
+
+    <div class="eyebrow purple" style="margin-top:22px">الأهداف المسمّاة</div>
+    ${m.items.length
+      ? m.items.map(x => checkRow(k, x.id, x.name, x.amount, x.done, x.category, x.category === 'emergency' ? 'صندوق الطوارئ · الهدف $300' : 'دفعة مجدولة')).join('')
+      : '<p class="muted">لا أهداف مسمّاة لهذا الشهر.</p>'}
+
+    <div class="eyebrow green" style="margin-top:22px">ادخار السيارة التلقائي</div>
+    ${checkRow(k, 'car', 'ادخار السيارة', d.car, !!m.carDone, 'car', 'يُحسب بعد كل المخصّصات الأخرى')}
+
+    <div class="divider"></div>
+    <div class="line"><b>إجمالي المخطط</b><b>${usd(d.allocated)}</b></div>
+    <div class="line"><span class="muted">المؤكَّد فعلياً</span><b class="green">${usd(d.done)}</b></div>
+    <div class="line"><span class="muted">مجموع ادخار السيارة المخطط حتى الآن</span><b>${usd(d.total)}</b></div>
+  </div>
+
+  <div id="editor">${edit ? editor(k) : ''}</div>
+
+  <div class="section"><h2>تفاصيل الدخل</h2></div>
+  <div class="card">
+    <div class="line"><span>الراتب</span><b>${usd(baseSalary(k))}</b></div>
+    <div class="line"><span>دعم العائلة</span><b>${usd(state.family || 0)}</b></div>
+    ${extrasFor(k).map(e => `<div class="line"><span>${escapeHtml(e.name)}</span><b>${usd(e.amount)}</b></div>`).join('')}
+    <div class="divider"></div>
+    <div class="line"><b>المجموع</b><b>${usd(d.income)}</b></div>
+  </div>`;
+}
+
+/* =========================================================
+   9) محرّر الشهر
+   ========================================================= */
+function goalRow(x) {
+  return `<div class="editrow" data-id="${x.id}">
+    <div class="field"><label>الهدف</label><input class="goalName" value="${escapeHtml(x.name)}" placeholder="اسم الهدف"></div>
+    <div class="field"><label>المبلغ ($)</label><input class="goalAmount" type="number" min="0" value="${x.amount}"></div>
+    <button class="danger" onclick="removeEditRow(this)" aria-label="حذف الهدف">✕</button>
+    <input type="hidden" class="goalCategory" value="${x.category}">
+  </div>`;
+}
+
+function editor(k) {
+  const m = state.months[k];
+  return `<div class="card appear" style="margin-top:16px;border-color:#52cfa9" id="editPanel">
+    <div class="section" style="margin-top:0"><h2>تعديل ${monthLabel(k)}</h2><button class="ghost" onclick="closeEdit()">✕ إغلاق</button></div>
+    <div class="banner note">يُعاد حساب ادخار السيارة تلقائياً. لا يمكنك حفظ أهداف ومصاريف أكبر من دخل هذا الشهر.</div>
+    <div class="twocol">
+      <div class="field"><label>تعديل الراتب ($)</label><input type="number" min="0" id="salaryEdit" value="${m.salary ?? ''}" placeholder="الراتب الافتراضي"></div>
+      <div class="field"><label>دخل إضافي هذا الشهر ($)</label><input type="number" min="0" id="extraEdit" value="0"></div>
+      <div class="field"><label>مصاريف شخصية ($)</label><input type="number" min="0" id="personalEdit" value="${m.personal}"></div>
+      <div class="field"><label>الجامعة ($)</label><input type="number" min="0" id="universityEdit" value="${m.university}"></div>
+      <div class="field"><label>مساعدة العائلة — دفعة للعائلة ($)</label><input type="number" min="0" id="familyPaymentEdit" value="${m.familyPayment || 0}"></div>
+    </div>
+    <div class="field"><label>وصف الدخل الإضافي (إن وُجد)</label><input id="extraName" placeholder="مكافأة، شغل جانبي، هدية…"></div>
+
+    <div class="section"><h2>الأهداف والدفعات</h2><span class="muted tiny">عدّل الاسم أو المبلغ</span></div>
+    <div id="editGoals">${m.items.map(goalRow).join('')}</div>
+    <button class="ghost bigbtn" onclick="addEditRow()">＋ إضافة هدف</button>
+    <div id="editMessage"></div>
+    <div class="btnrow" style="margin-top:18px">
+      <button class="btn bigbtn" onclick="saveMonthEdit()">✓ حفظ وإعادة الحساب</button>
+      <button class="ghost bigbtn" onclick="closeEdit()">إلغاء</button>
+    </div>
+  </div>`;
+}
+
+function editMonth() {
+  edit = true;
+  const box = document.getElementById('editor');
+  box.innerHTML = editor(selectedMonth);
+  box.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+function closeEdit() { edit = false; document.getElementById('editor').innerHTML = ''; }
+
+function addEditRow() {
+  const wrap = document.createElement('div');
+  wrap.innerHTML = goalRow({ id: uid(), name: '', amount: 0, category: 'goal' });
+  const row = wrap.firstElementChild;
+  document.getElementById('editGoals').appendChild(row);
+  row.querySelector('.goalName').focus();
+}
+function removeEditRow(b) { b.closest('.editrow').remove(); }
+
+function nonneg(v) { const n = Number(v); return Number.isFinite(n) && n >= 0 ? n : NaN; }
+const val = id => document.getElementById(id).value;
+
+function saveMonthEdit() {
+  const k = selectedMonth, m = state.months[k];
+  const salaryRaw = val('salaryEdit');
+  const salary = salaryRaw === '' ? null : nonneg(salaryRaw);
+  const personal = nonneg(val('personalEdit'));
+  const university = nonneg(val('universityEdit'));
+  const familyPayment = nonneg(val('familyPaymentEdit'));
+  const extra = nonneg(val('extraEdit'));
+  const extraName = val('extraName').trim();
+  const msg = document.getElementById('editMessage');
+
+  let invalid = false;
+  const items = [];
+  document.querySelectorAll('#editGoals .editrow').forEach(r => {
+    const name = r.querySelector('.goalName').value.trim();
+    const amount = nonneg(r.querySelector('.goalAmount').value);
+    const old = m.items.find(i => i.id === r.dataset.id);
+    if (!name || !Number.isFinite(amount)) invalid = true;
+    items.push({ id: r.dataset.id, name, amount, category: r.querySelector('.goalCategory').value, done: old ? old.done && old.amount === amount : false });
+  });
+
+  if (invalid || [personal, university, familyPayment, extra].some(x => !Number.isFinite(x)) || (salary !== null && !Number.isFinite(salary)) || (extra > 0 && !extraName)) {
+    msg.innerHTML = '<div class="notice">أدخل أسماء ومبالغ صحيحة (غير سالبة). الدخل الإضافي يحتاج وصفاً.</div>';
+    return;
+  }
+
+  const income = (salary === null ? (state.yearly[k.slice(0, 4)] ?? state.salaryBase) : salary)
+    + (state.family || 0) + extrasFor(k).reduce((s, e) => s + e.amount, 0) + extra;
+  const spending = personal + university + familyPayment + items.reduce((s, i) => s + i.amount, 0);
+  if (spending > income + 0.001) {
+    msg.innerHTML = `<div class="notice">تجاوزت الميزانية بـ ${usd(spending - income)}. خفّف الأهداف، انقل هدفاً لشهر لاحق، أو أضف دخلاً قبل الحفظ.</div>`;
+    return;
+  }
+
+  snapshot('تعديل ' + monthLabel(k));
+  Object.assign(m, {
+    salary, personal, university, familyPayment, items, carDone: false,
+    familyPaymentDone: m.familyPayment === familyPayment ? !!m.familyPaymentDone : false
+  });
+  if (extra > 0) state.extra.push({ id: uid(), name: extraName, amount: extra, month: k, recurring: false });
+  save();
+  edit = false;
+  render();
+  toast('تم الحفظ — تم تحديث ادخار السيارة والتوقّعات');
+}
+
+function toggle(k, id, value) {
+  snapshot('تحديث دفعة في ' + monthLabel(k));
+  const m = state.months[k];
+  if (id === 'personal') m.personalDone = value;
+  else if (id === 'university') m.universityDone = value;
+  else if (id === 'familyPayment') m.familyPaymentDone = value;
+  else if (id === 'car') m.carDone = value;
+  else { const item = m.items.find(x => x.id === id); if (item) item.done = value; }
+  save();
+  render(false);
+}
+
+/* =========================================================
+   10) صفحة الأهداف
+   ========================================================= */
+function goals() {
+  const items = months.flatMap(k => state.months[k].items.map(i => ({ ...i, k })));
+  const total = items.reduce((s, i) => s + i.amount, 0);
+  const done = items.filter(i => i.done).reduce((s, i) => s + i.amount, 0);
+  return `${header('متابعة الأهداف', 'المخطط مقابل المنجَز فعلياً')}
+  <div class="grid stats">
+    ${stat('الأهداف المسمّاة', usd(total), 'دون ادخار السيارة التلقائي', 'purple')}
+    ${stat('الأهداف المنجزة', usd(done), 'الدفعات المؤكَّدة فقط', 'green')}
+    ${stat('الأهداف المتبقية', usd(total - done), 'دفعات مجدولة غير مدفوعة', 'blue')}
+    ${stat('ادخار السيارة المؤكَّد', usd(actualCar()), 'من أصل $11,000', 'green')}
+  </div>
+
+  <div class="section"><h2>كل الأهداف المجدولة</h2></div>
+  <div class="card">
+    ${items.map(i => `<label class="item ${i.done ? 'done' : ''}">
+      <input class="check" type="checkbox" ${i.done ? 'checked' : ''} onchange="toggle('${i.k}','${i.id}',this.checked)">
+      <span class="itemmain"><span class="itemname" style="display:block">${escapeHtml(i.name)}</span><span class="itemmeta">${monthLabel(i.k)}</span></span>
+      <span class="money">${usdText(i.amount)}</span>
+    </label>`).join('')}
+  </div>
+
+  <div class="section"><h2>هدف السيارة</h2></div>
+  <div class="card">
+    <div class="progresslabel"><b>ادخار السيارة الفعلي</b><b class="green">${usd(actualCar())} / ${usd(CAR_TARGET)}</b></div>
+    <div class="bar"><div class="fill" style="width:${Math.min(100, actualCar() / CAR_TARGET * 100)}%"></div></div>
+    <p class="note">إيداعات السيارة تُؤكَّد بشكل منفصل داخل صفحة كل شهر.</p>
+  </div>`;
+}
+
+/* =========================================================
+   11) صفحة التحليلات
+   ========================================================= */
+function analytics() {
+  const p = plan(), last = p[months.at(-1)], tm = targetMonth();
+  const max = Math.max(CAR_TARGET, last.total), W = 760, H = 240;
+  const x = i => 25 + i * (W - 45) / (months.length - 1);
+  const y = v => H - 22 - v / max * (H - 42);
+  const pts = months.map((k, i) => `${x(i)},${y(p[k].total)}`).join(' ');
+  const actualPts = months.map((k, i) => `${x(i)},${y(p[k].actual)}`).join(' ');
+  const targetY = y(CAR_TARGET);
+
+  return `${header('لوحة التحليلات', 'التوقّعات المالية والتقدّم الفعلي')}
+  <div class="grid stats">
+    ${stat('إجمالي الدخل', usd(months.reduce((s, k) => s + p[k].income, 0)), 'توقّع 24 شهر', 'blue')}
+    ${stat('المصاريف الأساسية', usd(months.reduce((s, k) => s + p[k].fixed, 0)), 'شخصي + جامعة + عائلة')}
+    ${stat('ادخار السيارة المخطط', usd(last.total), 'توقّع', 'green')}
+    ${stat('ادخار السيارة الفعلي', usd(last.actual), 'الإيداعات المؤكَّدة فقط', 'purple')}
+  </div>
+
+  <div class="section"><h2>ادخار السيارة عبر الزمن</h2></div>
+  <div class="card">
+    <svg class="chart" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" role="img" aria-label="ادخار السيارة المخطط والفعلي على مدى 24 شهر">
+      <line x1="25" y1="${H - 22}" x2="${W - 20}" y2="${H - 22}" stroke="#5a708e"/>
+      <line x1="25" y1="${targetY}" x2="${W - 20}" y2="${targetY}" stroke="#ffcf75" stroke-opacity=".5" stroke-dasharray="5 7"/>
+      <polyline fill="none" stroke="#58e7b5" stroke-width="4" stroke-linejoin="round" points="${pts}"/>
+      <polyline fill="none" stroke="#bda1ff" stroke-width="3" stroke-dasharray="7 6" points="${actualPts}"/>
+    </svg>
+    <div class="legend">
+      <span><i class="dot" style="background:#58e7b5"></i>الادخار المخطط</span>
+      <span><i class="dot" style="background:#bda1ff"></i>المؤكَّد فعلياً</span>
+      <span><i class="dot" style="background:#ffcf75"></i>هدف $11,000</span>
+    </div>
+    <div class="line"><span class="muted">شهر الوصول المتوقَّع</span><b>${tm ? monthLabel(tm) : 'لا يتحقق ضمن الخطة'}</b></div>
+    <div class="note">الرسم يُعاد حسابه عند تعديل أي شهر أو إضافة دخل. الادخار المخطط ليس نفس النقد المدّخر فعلياً. (الزمن من اليسار إلى اليمين: تشرين الثاني 2026 ← تشرين الأول 2028)</div>
+  </div>
+
+  <div class="section"><h2>التوزيع السنوي</h2></div>
+  <div class="card">
+    ${[2026, 2027, 2028].map(yy => {
+      const ks = months.filter(k => k.startsWith(yy));
+      const income = ks.reduce((s, k) => s + p[k].income, 0), car = ks.reduce((s, k) => s + p[k].car, 0);
+      return `<div class="line"><b>${yy}</b><span>الدخل ${usd(income)} · السيارة ${usd(car)}</span></div>`;
+    }).join('')}
+  </div>`;
+}
+
+/* =========================================================
+   12) صفحة الإعدادات
+   ========================================================= */
+function settings() {
+  return `${header('الإعدادات والدخل', 'إدارة الراتب والدخل الإضافي والنسخ الاحتياطية')}
+  <div class="card">
+    <h2 style="margin-top:0">إدارة الدخل</h2>
+    <div class="twocol">
+      <div class="field"><label>الراتب الافتراضي من كانون الأول 2026 ($)</label><input id="baseSalary" type="number" min="0" value="${state.salaryBase}"></div>
+      <div class="field"><label>دخل شهري من العائلة ($)</label><input id="familySupport" type="number" min="0" value="${state.family || 0}"></div>
+      <div class="field"><label>راتب 2027 (اختياري) ($)</label><input id="salary2027" type="number" min="0" value="${state.yearly['2027'] ?? ''}" placeholder="الافتراضي"></div>
+      <div class="field"><label>راتب 2028 (اختياري) ($)</label><input id="salary2028" type="number" min="0" value="${state.yearly['2028'] ?? ''}" placeholder="الافتراضي"></div>
+    </div>
+    <button class="btn bigbtn" onclick="saveSettings()">حفظ إعدادات الدخل</button>
+
+    <div class="divider"></div>
+    <h3>إضافة دخل إضافي</h3>
+    <div class="field"><label>الوصف</label><input id="incomeName" placeholder="مكافأة / شغل جانبي / هدية"></div>
+    <div class="twocol">
+      <div class="field"><label>المبلغ ($)</label><input id="incomeAmount" type="number" min="0" placeholder="200"></div>
+      <div class="field"><label>نوع الدخل</label>
+        <select id="incomeType" onchange="incomeTypeChange()">
+          <option value="once">لمرّة واحدة (شهر واحد)</option>
+          <option value="year">شهري متكرّر (سنة كاملة)</option>
+        </select>
+      </div>
+    </div>
+    <div class="field"><label>الشهر / السنة</label>
+      <select id="incomePeriod">${months.map(k => `<option value="${k}">${monthLabel(k)}</option>`).join('')}</select>
+    </div>
+    <button class="btn bigbtn" onclick="addIncome()">＋ إضافة دخل</button>
+    <div id="incomeList">
+      ${state.extra.length
+        ? state.extra.map(e => `<div class="item">
+            <div class="itemmain"><div class="itemname">${escapeHtml(e.name)}</div><div class="itemmeta">${e.recurring ? 'كل شهر في ' + e.year : monthLabel(e.month)}</div></div>
+            <b>${usd(e.amount)}</b>
+            <button class="danger" onclick="deleteIncome('${e.id}')" aria-label="حذف">✕</button>
+          </div>`).join('')
+        : '<p class="muted">لا يوجد دخل إضافي بعد.</p>'}
+    </div>
+  </div>
+
+  <div class="section"><h2>النسخ الاحتياطي والاستعادة</h2></div>
+  <div class="card">
+    <div class="btnrow">
+      <button class="btn bigbtn" onclick="exportBackup()">↓ تصدير نسخة احتياطية</button>
+      <button class="ghost bigbtn" onclick="document.getElementById('importFile').click()">↑ استيراد نسخة احتياطية</button>
+    </div>
+    <p class="note">صدّر بياناتك بشكل منتظم، لأن تخزين المتصفح ممكن ينمسح. الاستيراد يستبدل البيانات الحالية بعد التأكيد. النسخ الاحتياطية من الموقع الإنكليزي القديم متوافقة.</p>
+  </div>
+
+  <div class="section"><h2>سجلّ التعديلات</h2></div>
+  <div class="card">
+    <button class="ghost bigbtn" onclick="undo()" ${undoStack.length ? '' : 'disabled'}>↶ تراجع عن آخر تعديل</button>
+    <p class="note">التراجع متاح خلال هذه الجلسة فقط. صدّر نسخة احتياطية للاستعادة الدائمة.</p>
+    <div class="history">
+      ${(state.history || []).slice(0, 15).map(x => `<div class="historyentry">${escapeHtml(x.label)}<div class="muted tiny">${escapeHtml(x.when)}</div></div>`).join('') || '<p class="muted">لا تعديلات بعد.</p>'}
+    </div>
+  </div>
+
+  <div class="section"><h2>قواعد الخطة</h2></div>
+  <div class="card note">
+    الأهداف الصغيرة والآيفون قبل منتصف 2027. الكمبيوتر مدفوع بالكامل قبل هدف السيارة. لا ميزانية مرنة ولا ادخار للشقة. هدف صندوق الطوارئ $300.
+    كل شهر يتضمّن "مساعدة العائلة" اختيارياً ($0 افتراضياً)، ويمكن تعديله من "تعديل الشهر".
+    مساهمة السيارة = الدخل الشهري المتبقي بعد الأساسيات والأهداف. تكاليف تسجيل السيارة والتأمين والصيانة غير محسوبة بعد؛ أضفها كأهداف عندما تعرفها.
+  </div>`;
+}
+
+function saveSettings() {
+  const base = nonneg(val('baseSalary')), family = nonneg(val('familySupport'));
+  const y27 = val('salary2027'), y28 = val('salary2028'), yearly = {};
+  if (y27 !== '') yearly['2027'] = nonneg(y27);
+  if (y28 !== '') yearly['2028'] = nonneg(y28);
+  if (!Number.isFinite(base) || !Number.isFinite(family) || Object.values(yearly).some(v => !Number.isFinite(v))) {
+    toast('أدخل مبالغ دخل صحيحة وغير سالبة'); return;
+  }
+  const old = JSON.stringify(state);
+  Object.assign(state, { salaryBase: base, family, yearly });
+  const overBudget = months.some(k => plan()[k].available < 0);
+  state = JSON.parse(old);
+  if (overBudget) { toast('لا يمكن الحفظ: بعض الأشهر ستتجاوز دخلها'); return; }
+  snapshot('تحديث إعدادات الدخل');
+  Object.assign(state, { salaryBase: base, family, yearly });
+  save(); render();
+  toast('تم حفظ إعدادات الدخل وإعادة حساب الخطة');
+}
+
+function incomeTypeChange() {
+  const s = document.getElementById('incomePeriod'), year = val('incomeType') === 'year';
+  s.innerHTML = (year ? ['2026', '2027', '2028'] : months)
+    .map(k => `<option value="${k}">${year ? k : monthLabel(k)}</option>`).join('');
+}
+
+function addIncome() {
+  const name = val('incomeName').trim(), amount = nonneg(val('incomeAmount'));
+  const type = val('incomeType'), period = val('incomePeriod');
+  if (!name || !Number.isFinite(amount) || amount <= 0) { toast('أدخل اسم الدخل ومبلغاً أكبر من صفر'); return; }
+  snapshot('إضافة دخل: ' + name);
+  state.extra.push({ id: uid(), name, amount, recurring: type === 'year', ...(type === 'year' ? { year: period } : { month: period }) });
+  save(); render();
+  toast('تمت إضافة الدخل — تمت إعادة حساب الخطة');
+}
+
+function deleteIncome(id) {
+  if (!confirm('حذف هذا الدخل؟')) return;
+  snapshot('حذف دخل إضافي');
+  state.extra = state.extra.filter(x => x.id !== id);
+  save(); render();
+}
+
+function undo() {
+  if (!undoStack.length) { toast('لا يوجد ما يمكن التراجع عنه'); return; }
+  state = JSON.parse(undoStack.pop());
+  save(); render();
+  toast('تم التراجع عن آخر تعديل');
+}
+
+function exportBackup() {
+  const blob = new Blob([JSON.stringify(state, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob), a = document.createElement('a');
+  const d = new Date().toISOString().slice(0, 10);
+  a.href = url; a.download = `Mahdi_Roadmap_Backup_${d}.json`; a.click();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+  toast('تم تنزيل النسخة الاحتياطية');
+}
+
+document.getElementById('importFile').addEventListener('change', async e => {
+  const file = e.target.files[0];
+  if (!file) return;
+  try {
+    const data = JSON.parse(await file.text());
+    if (!data.months || !data.months['2026-11'] || !Array.isArray(data.extra)) throw Error('invalid');
+    if (!confirm('استبدال الخطة الحالية بهذه النسخة الاحتياطية؟')) return;
+    snapshot('استيراد نسخة احتياطية');
+    state = normalize(data);
+    save(); go('home');
+    toast('تمت استعادة النسخة الاحتياطية');
+  } catch (err) {
+    toast('ملف غير صالح أو غير مدعوم');
+  } finally { e.target.value = ''; }
+});
+
+/* =========================================================
+   13) العرض
+   ========================================================= */
+function render(scroll = true) {
+  const views = { home, year: yearView, month: monthView, goals, analytics, settings };
+  document.getElementById('app').innerHTML = `<div class="appear">${views[page]()}</div>`;
+  nav();
+  const ok = storageWorks();
+  updateSaveStatus(ok ? 'محفوظ محلياً · احفظ نسخة قبل الإغلاق' : 'التخزين محظور · صدّر نسخة احتياطية', ok);
+  if (scroll) window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+window.addEventListener('pageshow', () => {
+  const ok = storageWorks();
+  updateSaveStatus(ok ? 'محفوظ محلياً · احفظ نسخة قبل الإغلاق' : 'التخزين محظور · صدّر نسخة احتياطية', ok);
+});
+
+render();
+</script>
+</body>
+</html>
