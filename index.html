@@ -180,7 +180,9 @@ button:disabled{opacity:.45;cursor:not-allowed}
    1) الثوابت والأدوات المساعدة
    ========================================================= */
 const KEY = 'mahdi-roadmap-ar-v1';
-const CAR_TARGET = 11000;
+// هدف السيارة صار من الإعدادات (state.carTarget) بدل رقم ثابت
+const carTarget = () => Number(state.carTarget) || 0;
+const pct = (a, b) => b > 0 ? Math.min(100, a / b * 100) : 0;
 
 // أسماء الأشهر كما تُستعمل في لبنان
 const NAMES = ['كانون الثاني','شباط','آذار','نيسان','أيار','حزيران','تموز','آب','أيلول','تشرين الأول','تشرين الثاني','كانون الأول'];
@@ -209,23 +211,10 @@ function entry(name, amount, category = 'goal', id) {
    2) البيانات الافتراضية
    ========================================================= */
 function defaults() {
-  const data = { version: 4, salaryBase: 1400, family: 0, yearly: {}, extra: [], months: {}, history: [] };
+  // كل الأرقام تبدأ من صفر — تُدخل من صفحة الإعدادات ومن "تعديل الشهر"
+  const data = { version: 4, salaryBase: 0, family: 0, carTarget: 0, carPrice: 0, yearly: {}, extra: [], months: {}, history: [] };
   for (const k of months)
-    data.months[k] = { salary: k === '2026-11' ? 1200 : null, personal: 300, university: 200, familyPayment: 0, items: [] };
-
-  const add = (k, name, amount, category = 'goal') => data.months[k].items.push(entry(name, amount, category));
-  add('2026-11', 'تسجيل الموتوسيكل', 300);
-  add('2026-11', 'ساعة', 300);
-  add('2026-11', 'صندوق الطوارئ', 100, 'emergency');
-  add('2026-12', 'مكتب وكرسي', 300);
-  add('2026-12', 'برادي', 100);
-  add('2026-12', 'صندوق الطوارئ', 100, 'emergency');
-  add('2027-01', 'رخصتَي سوق', 500);
-  add('2027-01', 'صندوق الطوارئ', 100, 'emergency');
-  add('2027-02', 'آيفون', 500);
-  add('2027-03', 'كمبيوتر — الدفعة الأولى', 900);
-  add('2027-04', 'كمبيوتر — الدفعة الثانية', 900);
-  add('2027-05', 'كمبيوتر — الدفعة الأخيرة', 200);
+    data.months[k] = { salary: null, personal: 0, university: 0, familyPayment: 0, items: [] };
   return data;
 }
 
@@ -251,6 +240,8 @@ function updateSaveStatus(message, ok) {
 }
 
 function normalize(s) {
+  if (s.carTarget == null) s.carTarget = 0;
+  if (s.carPrice == null) s.carPrice = 0;
   for (const k of months) if (s.months[k] && s.months[k].familyPayment == null) s.months[k].familyPayment = 0;
   return s;
 }
@@ -326,7 +317,7 @@ function plan() {
   }
   return result;
 }
-const targetMonth = () => { const p = plan(); return months.find(k => p[k].total >= CAR_TARGET) || null; };
+const targetMonth = () => { if (!carTarget()) return null; const p = plan(); return months.find(k => p[k].total >= carTarget()) || null; };
 const actualCar   = () => plan()[months.at(-1)].actual;
 
 function checkedCount(m) {
@@ -366,7 +357,13 @@ function stat(label, val, sub, color = '') {
    ========================================================= */
 function home() {
   const p = plan(), last = p[months.at(-1)], tm = targetMonth();
-  const remaining = Math.max(0, CAR_TARGET - last.actual);
+  const T = carTarget();
+  const remaining = Math.max(0, T - last.actual);
+  // أقرب 3 أهداف غير مدفوعة
+  const upcoming = months.flatMap(k => state.months[k].items.filter(i => !i.done).map(i => ({ ...i, k }))).slice(0, 3);
+  const setupHint = !state.salaryBase && !T
+    ? `<div class="banner note" style="margin-top:16px">👋 أهلاً! ابدأ من <b>الإعدادات</b>: حطّ راتبك وهدف السيارة، وبعدين ادخل على كل شهر وزيد مصاريفك وأهدافك. <button class="btn" style="margin-top:10px;display:block" onclick="go('settings')">⚙ افتح الإعدادات</button></div>`
+    : '';
   return `
   <div class="top">
     <div><div class="brand">خارطة مهدي المالية</div><div class="sub">مالك. أهدافك. مستقبلك.</div></div>
@@ -378,9 +375,10 @@ function home() {
     <h1>ابنِ مستقبلك.<br>شهراً بعد شهر.</h1>
     <p>اختر السنة، ثم الشهر، وتابع كل هدف.</p>
   </div>
+  ${setupHint}
 
   <div class="grid stats">
-    ${stat('هدف ادخار السيارة', usd(CAR_TARGET), 'حصّتك من سيارة بـ $15,000', 'green')}
+    ${stat('هدف ادخار السيارة', T ? usd(T) : '—', state.carPrice ? `حصّتك من سيارة بـ ${usd(state.carPrice)}` : (T ? 'هدف الادخار' : 'حدّده من الإعدادات'), 'green')}
     ${stat('الادخار المخطط للسيارة', usd(last.total), 'حتى تشرين الأول 2028', 'blue')}
     ${stat('المدّخر فعلياً', usd(last.actual), 'إيداعات السيارة المؤكَّدة فقط', 'green')}
     ${stat('شهر الوصول للهدف', tm ? monthLabel(tm) : 'لم يتحقق', 'حسب الخطة الحالية', 'purple')}
@@ -397,18 +395,18 @@ function home() {
 
   <div class="section"><h2>العدّ التنازلي للسيارة</h2><span class="pill">السيارة أولاً</span></div>
   <div class="card">
-    <div class="progresslabel"><b>المدّخر فعلياً</b><b class="green">${usd(last.actual)} / ${usd(CAR_TARGET)}</b></div>
-    <div class="bar"><div class="fill" style="width:${Math.min(100, last.actual / CAR_TARGET * 100)}%"></div></div>
-    <div class="line"><span class="muted">المتبقي للادخار</span><b>${usd(remaining)}</b></div>
-    <div class="note">المساهمات المخططة هي توقّعات فقط. يزيد الادخار الفعلي فقط عندما تؤكّد إيداع السيارة في الشهر. مبلغ بيع سيارة الوالد ($4,000) منفصل ولا يُحتسب ضمن المدّخرات.</div>
+    <div class="progresslabel"><b>المدّخر فعلياً</b><b class="green">${usd(last.actual)} / ${T ? usd(T) : '—'}</b></div>
+    <div class="bar"><div class="fill" style="width:${pct(last.actual, T)}%"></div></div>
+    <div class="line"><span class="muted">المتبقي للادخار</span><b>${T ? usd(remaining) : '—'}</b></div>
+    <div class="note">المساهمات المخططة هي توقّعات فقط. يزيد الادخار الفعلي فقط عندما تؤكّد إيداع السيارة في الشهر.</div>
   </div>
 
-  <div class="section"><h2>ترتيب الأولويات</h2></div>
+  <div class="section"><h2>الأهداف القادمة</h2><button class="ghost" onclick="go('goals')">عرض الكل ←</button></div>
   <div class="card">
-    <div class="line"><span>1 · الأهداف الصغيرة + الآيفون</span><b class="green">قبل شباط 2027</b></div>
-    <div class="line"><span>2 · الكمبيوتر (${usd(2000)})</span><b class="purple">قبل أيار 2027</b></div>
-    <div class="line"><span>3 · السيارة (${usd(CAR_TARGET)})</span><b class="green">${tm ? monthLabel(tm) : 'خارج الخطة'}</b></div>
-    <div class="note">صندوق الطوارئ محدود بـ $300. لا ميزانية مرنة ولا ادخار للشقة خلال فترة هدف السيارة.</div>
+    ${upcoming.length
+      ? upcoming.map((g, n) => `<div class="line"><span>${n + 1} · ${escapeHtml(g.name)} (${usd(g.amount)})</span><b class="${n % 2 ? 'purple' : 'green'}">${monthLabel(g.k)}</b></div>`).join('')
+      : '<p class="muted" style="margin:0">لا أهداف بعد. افتح أي شهر واضغط "تعديل الشهر" لتضيف أهدافك.</p>'}
+    ${T ? `<div class="line"><span>🚗 السيارة (${usd(T)})</span><b class="green">${tm ? monthLabel(tm) : 'خارج الخطة'}</b></div>` : ''}
   </div>`;
 }
 
@@ -475,7 +473,7 @@ function monthView() {
 
     <div class="eyebrow purple" style="margin-top:22px">الأهداف المسمّاة</div>
     ${m.items.length
-      ? m.items.map(x => checkRow(k, x.id, x.name, x.amount, x.done, x.category, x.category === 'emergency' ? 'صندوق الطوارئ · الهدف $300' : 'دفعة مجدولة')).join('')
+      ? m.items.map(x => checkRow(k, x.id, x.name, x.amount, x.done, x.category, x.category === 'emergency' ? 'صندوق الطوارئ' : 'دفعة مجدولة')).join('')
       : '<p class="muted">لا أهداف مسمّاة لهذا الشهر.</p>'}
 
     <div class="eyebrow green" style="margin-top:22px">ادخار السيارة التلقائي</div>
@@ -626,7 +624,7 @@ function goals() {
     ${stat('الأهداف المسمّاة', usd(total), 'دون ادخار السيارة التلقائي', 'purple')}
     ${stat('الأهداف المنجزة', usd(done), 'الدفعات المؤكَّدة فقط', 'green')}
     ${stat('الأهداف المتبقية', usd(total - done), 'دفعات مجدولة غير مدفوعة', 'blue')}
-    ${stat('ادخار السيارة المؤكَّد', usd(actualCar()), 'من أصل $11,000', 'green')}
+    ${stat('ادخار السيارة المؤكَّد', usd(actualCar()), carTarget() ? 'من أصل ' + usdText(carTarget()) : 'حدّد الهدف من الإعدادات', 'green')}
   </div>
 
   <div class="section"><h2>كل الأهداف المجدولة</h2></div>
@@ -640,8 +638,8 @@ function goals() {
 
   <div class="section"><h2>هدف السيارة</h2></div>
   <div class="card">
-    <div class="progresslabel"><b>ادخار السيارة الفعلي</b><b class="green">${usd(actualCar())} / ${usd(CAR_TARGET)}</b></div>
-    <div class="bar"><div class="fill" style="width:${Math.min(100, actualCar() / CAR_TARGET * 100)}%"></div></div>
+    <div class="progresslabel"><b>ادخار السيارة الفعلي</b><b class="green">${usd(actualCar())} / ${carTarget() ? usd(carTarget()) : '—'}</b></div>
+    <div class="bar"><div class="fill" style="width:${pct(actualCar(), carTarget())}%"></div></div>
     <p class="note">إيداعات السيارة تُؤكَّد بشكل منفصل داخل صفحة كل شهر.</p>
   </div>`;
 }
@@ -651,12 +649,12 @@ function goals() {
    ========================================================= */
 function analytics() {
   const p = plan(), last = p[months.at(-1)], tm = targetMonth();
-  const max = Math.max(CAR_TARGET, last.total), W = 760, H = 240;
+  const max = Math.max(carTarget(), last.total, 1), W = 760, H = 240;
   const x = i => 25 + i * (W - 45) / (months.length - 1);
   const y = v => H - 22 - v / max * (H - 42);
   const pts = months.map((k, i) => `${x(i)},${y(p[k].total)}`).join(' ');
   const actualPts = months.map((k, i) => `${x(i)},${y(p[k].actual)}`).join(' ');
-  const targetY = y(CAR_TARGET);
+  const targetY = y(carTarget());
 
   return `${header('لوحة التحليلات', 'التوقّعات المالية والتقدّم الفعلي')}
   <div class="grid stats">
@@ -670,14 +668,14 @@ function analytics() {
   <div class="card">
     <svg class="chart" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" role="img" aria-label="ادخار السيارة المخطط والفعلي على مدى 24 شهر">
       <line x1="25" y1="${H - 22}" x2="${W - 20}" y2="${H - 22}" stroke="#5a708e"/>
-      <line x1="25" y1="${targetY}" x2="${W - 20}" y2="${targetY}" stroke="#ffcf75" stroke-opacity=".5" stroke-dasharray="5 7"/>
+      ${carTarget() ? `<line x1="25" y1="${targetY}" x2="${W - 20}" y2="${targetY}" stroke="#ffcf75" stroke-opacity=".5" stroke-dasharray="5 7"/>` : ''}
       <polyline fill="none" stroke="#58e7b5" stroke-width="4" stroke-linejoin="round" points="${pts}"/>
       <polyline fill="none" stroke="#bda1ff" stroke-width="3" stroke-dasharray="7 6" points="${actualPts}"/>
     </svg>
     <div class="legend">
       <span><i class="dot" style="background:#58e7b5"></i>الادخار المخطط</span>
       <span><i class="dot" style="background:#bda1ff"></i>المؤكَّد فعلياً</span>
-      <span><i class="dot" style="background:#ffcf75"></i>هدف $11,000</span>
+      <span><i class="dot" style="background:#ffcf75"></i>هدف ${carTarget() ? usdText(carTarget()) : 'السيارة'}</span>
     </div>
     <div class="line"><span class="muted">شهر الوصول المتوقَّع</span><b>${tm ? monthLabel(tm) : 'لا يتحقق ضمن الخطة'}</b></div>
     <div class="note">الرسم يُعاد حسابه عند تعديل أي شهر أو إضافة دخل. الادخار المخطط ليس نفس النقد المدّخر فعلياً. (الزمن من اليسار إلى اليمين: تشرين الثاني 2026 ← تشرين الأول 2028)</div>
@@ -701,12 +699,18 @@ function settings() {
   <div class="card">
     <h2 style="margin-top:0">إدارة الدخل</h2>
     <div class="twocol">
-      <div class="field"><label>الراتب الافتراضي من كانون الأول 2026 ($)</label><input id="baseSalary" type="number" min="0" value="${state.salaryBase}"></div>
+      <div class="field"><label>الراتب الشهري الافتراضي ($)</label><input id="baseSalary" type="number" min="0" value="${state.salaryBase}"></div>
       <div class="field"><label>دخل شهري من العائلة ($)</label><input id="familySupport" type="number" min="0" value="${state.family || 0}"></div>
       <div class="field"><label>راتب 2027 (اختياري) ($)</label><input id="salary2027" type="number" min="0" value="${state.yearly['2027'] ?? ''}" placeholder="الافتراضي"></div>
       <div class="field"><label>راتب 2028 (اختياري) ($)</label><input id="salary2028" type="number" min="0" value="${state.yearly['2028'] ?? ''}" placeholder="الافتراضي"></div>
     </div>
-    <button class="btn bigbtn" onclick="saveSettings()">حفظ إعدادات الدخل</button>
+    <div class="divider"></div>
+    <h3>هدف السيارة</h3>
+    <div class="twocol">
+      <div class="field"><label>المبلغ يلي بدك تدّخره ($)</label><input id="carTargetIn" type="number" min="0" value="${state.carTarget || ''}" placeholder="مثلاً 10000"></div>
+      <div class="field"><label>سعر السيارة الكامل — اختياري ($)</label><input id="carPriceIn" type="number" min="0" value="${state.carPrice || ''}" placeholder="اختياري"></div>
+    </div>
+    <button class="btn bigbtn" onclick="saveSettings()">حفظ الإعدادات</button>
 
     <div class="divider"></div>
     <h3>إضافة دخل إضافي</h3>
@@ -753,16 +757,19 @@ function settings() {
     </div>
   </div>
 
-  <div class="section"><h2>قواعد الخطة</h2></div>
+  <div class="section"><h2>كيف تشتغل الخطة</h2></div>
   <div class="card note">
-    الأهداف الصغيرة والآيفون قبل منتصف 2027. الكمبيوتر مدفوع بالكامل قبل هدف السيارة. لا ميزانية مرنة ولا ادخار للشقة. هدف صندوق الطوارئ $300.
-    كل شهر يتضمّن "مساعدة العائلة" اختيارياً ($0 افتراضياً)، ويمكن تعديله من "تعديل الشهر".
-    مساهمة السيارة = الدخل الشهري المتبقي بعد الأساسيات والأهداف. تكاليف تسجيل السيارة والتأمين والصيانة غير محسوبة بعد؛ أضفها كأهداف عندما تعرفها.
+    ادخار السيارة كل شهر = الدخل − (المصاريف الأساسية + الأهداف المسمّاة). أي مبلغ متبقٍّ يذهب تلقائياً للسيارة.
+    أضف أهدافك ومصاريفك من "تعديل الشهر" داخل كل شهر، وأكّد كل دفعة عند دفعها لتظهر في "المنجَز فعلياً".
+    بياناتك محفوظة في متصفّحك فقط ولا تُرفع إلى أي مكان.
   </div>`;
 }
 
 function saveSettings() {
   const base = nonneg(val('baseSalary')), family = nonneg(val('familySupport'));
+  const carT = val('carTargetIn') === '' ? 0 : nonneg(val('carTargetIn'));
+  const carP = val('carPriceIn') === '' ? 0 : nonneg(val('carPriceIn'));
+  if (!Number.isFinite(carT) || !Number.isFinite(carP)) { toast('أدخل مبالغ صحيحة لهدف السيارة'); return; }
   const y27 = val('salary2027'), y28 = val('salary2028'), yearly = {};
   if (y27 !== '') yearly['2027'] = nonneg(y27);
   if (y28 !== '') yearly['2028'] = nonneg(y28);
@@ -774,10 +781,10 @@ function saveSettings() {
   const overBudget = months.some(k => plan()[k].available < 0);
   state = JSON.parse(old);
   if (overBudget) { toast('لا يمكن الحفظ: بعض الأشهر ستتجاوز دخلها'); return; }
-  snapshot('تحديث إعدادات الدخل');
-  Object.assign(state, { salaryBase: base, family, yearly });
+  snapshot('تحديث الإعدادات');
+  Object.assign(state, { salaryBase: base, family, yearly, carTarget: carT, carPrice: carP });
   save(); render();
-  toast('تم حفظ إعدادات الدخل وإعادة حساب الخطة');
+  toast('تم حفظ الإعدادات وإعادة حساب الخطة');
 }
 
 function incomeTypeChange() {
